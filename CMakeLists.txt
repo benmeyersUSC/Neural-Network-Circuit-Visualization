@@ -3,7 +3,20 @@ project(Neural-Network-Circuit-Visualization)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_subdirectory(SDL3)
+if(EXISTS "${CMAKE_SOURCE_DIR}/SDL3/CMakeLists.txt")
+    message(STATUS "SDL3: using local copy")
+    add_subdirectory(SDL3)
+else()
+    message(STATUS "SDL3: fetching from GitHub")
+    include(FetchContent)
+    FetchContent_Declare(
+            SDL3
+            GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+            GIT_TAG        release-3.2.18
+            GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(SDL3)
+endif()
 
 
 add_executable(Neural-Network-Circuit-Visualization src/main.cpp

@@ -40,6 +40,9 @@
 # debug information files
 *.dwo
 
+# Local SDL3 source (use FetchContent on CI)
+SDL3/
+
 # Build directories
 build/
 build-web/
