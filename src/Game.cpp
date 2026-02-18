@@ -1,10 +1,6 @@
 #include "Game.h"
 
-#include <iostream>
 #include "Actor.h"
-#include <functional>
-#include "SDL3_image/SDL_image.h"
-
 #include "Component.h"
 #include "DrawComponent.h"
 #include "Line.h"
@@ -124,28 +120,6 @@ void Game::AddPendingDestroy(class Actor *actor) {
 	}
 }
 
-
-SDL_Texture * Game::GetTexture(std::string_view filename) {
-
-	auto it = mTextures.find(filename.data());
-	if (it != mTextures.end())
-	{
-		return it->second;
-	}
-	std::string fullPath = std::string(SDL_GetBasePath()) + std::string(filename);
-	SDL_Surface* imgSurface = IMG_Load(fullPath.c_str());
-	if (imgSurface == nullptr)
-	{
-		SDL_Log("Image file: %s failed to load!", filename.data());
-		return nullptr;
-	}
-	SDL_Texture* imgTexture = SDL_CreateTextureFromSurface(mSdlRenderer, imgSurface);
-	SDL_SetTextureBlendMode(imgTexture, SDL_BLENDMODE_BLEND);
-	SDL_DestroySurface(imgSurface);
-
-	mTextures[filename.data()] = imgTexture;
-	return imgTexture;
-}
 
 void Game::UpdateGame()
 {

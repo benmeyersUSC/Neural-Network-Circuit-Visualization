@@ -11,7 +11,6 @@
 #include "Math.h"
 #include <functional>
 #include <vector>
-#include <unordered_map>
 #include "Actor.h"
 
 class Component;
@@ -80,14 +79,12 @@ public:
 
 	[[nodiscard]] const Vector2& GetMousePos()const{return mMousePos;}
 
-	SDL_Texture* GetTexture(std::string_view filename);
 	SDL_Renderer* GetRenderer(){return mSdlRenderer;}
 	[[nodiscard]] float GetDT()const{return mDT;}
 private:
 	// window and renderer
 	SDL_Window* mSdlWindow;
 	SDL_Renderer* mSdlRenderer;
-	std::unordered_map<std::string, SDL_Texture*> mTextures;
 
 	// keep the game going
 	bool mContinueRunning;
