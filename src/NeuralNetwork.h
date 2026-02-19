@@ -10,10 +10,15 @@
 #include "DynamicMatrix.h"
 
 // available activation functions
-enum class Activation {Sigmoid, ReLU, Softmax};
+enum class Activation {Input, Sigmoid, ReLU, Softmax};
 
 inline std::string_view ActivationName(const Activation& a) {
-    return a == Activation::Sigmoid ? "Sigmoid" : a == Activation::ReLU ? "ReLU" : "Softmax";
+    switch (a) {
+        case Activation::Input:   return "Input";
+        case Activation::Sigmoid: return "Sigmoid";
+        case Activation::ReLU:    return "ReLU";
+        case Activation::Softmax: return "Softmax";
+    }
 }
 
 // Layer wrapper for weights, bias, and activation function

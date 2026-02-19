@@ -53,6 +53,7 @@ DynamicMatrix Layer::forward(const DynamicMatrix& input) const {
 
 // parse an activation token in config file
 static Activation ParseActivation(const std::string& s) {
+    if (s == "input")   return Activation::Input;
     if (s == "sigmoid") return Activation::Sigmoid;
     if (s == "ReLU")    return Activation::ReLU;
     if (s == "softmax") return Activation::Softmax;

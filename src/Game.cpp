@@ -181,7 +181,7 @@ void Game::GenerateOutput()
 void Game::LoadData()
 {
 	mNN = CreateActor<NeuralNetworkActor>();
-	mNN->GetNN().FromConfig("../src/nn.cfg");
+	mNN->GetNN().FromConfig(NN_CFG_PATH);
 	mNN->SetWidth(927.0f);
 	mNN->SetHeight(549.0f);
 	mNN->GetTransform().SetPosition({HALF_WIDTH, HALF_HEIGHT});

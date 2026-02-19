@@ -46,6 +46,16 @@ add_executable(Neural-Network-Circuit-Visualization src/main.cpp
 target_link_libraries(Neural-Network-Circuit-Visualization PRIVATE SDL3::SDL3)
 
 if(EMSCRIPTEN)
+    target_compile_definitions(Neural-Network-Circuit-Visualization PRIVATE
+            NN_CFG_PATH="nn.cfg"
+    )
+else()
+    target_compile_definitions(Neural-Network-Circuit-Visualization PRIVATE
+            NN_CFG_PATH="${CMAKE_SOURCE_DIR}/src/nn.cfg"
+    )
+endif()
+
+if(EMSCRIPTEN)
     set_target_properties(Neural-Network-Circuit-Visualization PROPERTIES
             SUFFIX ".html"
             OUTPUT_NAME "index"
@@ -54,5 +64,6 @@ if(EMSCRIPTEN)
             --shell-file ${CMAKE_SOURCE_DIR}/web/shell.html
             -sALLOW_MEMORY_GROWTH=1
             -sGL_ENABLE_GET_PROC_ADDRESS=1
+            --preload-file ${CMAKE_SOURCE_DIR}/src/nn.cfg@nn.cfg
     )
 endif()
