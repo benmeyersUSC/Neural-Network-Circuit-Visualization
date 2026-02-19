@@ -82,6 +82,9 @@ public:
 
 	SDL_Renderer* GetRenderer(){return mSdlRenderer;}
 	[[nodiscard]] float GetDT()const{return mDT;}
+
+	static void LeadingEdge(bool keyBool, bool& lastBool, const std::function<void()>& fn,
+							bool condition = true);
 private:
 	// window and renderer
 	SDL_Window* mSdlWindow;

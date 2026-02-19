@@ -26,6 +26,13 @@ struct Layer {
     [[nodiscard]] DynamicMatrix forward(const DynamicMatrix& input) const;
 };
 
+struct TrainSnapshot {
+    std::vector<DynamicMatrix> activations;     // [a0=input, a1, ..., aL]
+    std::vector<DynamicMatrix> deltas;          // [delta1, ..., deltaL], one per layer
+    std::vector<DynamicMatrix> weightGradients; // [dW1, ..., dWL], same shape as weights
+    float loss = 0.0f;
+};
+
 class NeuralNetwork {
     // network consists of a vector of Layer objects
     std::vector<Layer> mLayers;
@@ -45,7 +52,11 @@ public:
 
     [[nodiscard]] const std::vector<Layer>& Layers() const { return mLayers; }
 
-     void operator<<(std::ostream& os);
+    // One full training step: forward, backward, weight update. Returns snapshot for animation.
+    // l1: L1 sparsity regularization coefficient (drives weak weights to exactly zero)
+    TrainSnapshot TrainStep(const DynamicMatrix& input, const DynamicMatrix& target, float lr, float l1 = 0.0f);
+
+     void operator<<(std::ostream& os) const;
 };
 
 #endif //NEURAL_NETWORK_CIRCUIT_VISUALIZATION_NEURALNETWORK_H

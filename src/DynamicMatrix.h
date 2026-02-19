@@ -26,6 +26,10 @@ public:
     DynamicMatrix operator*(float scalar) const;
 
     DynamicMatrix Apply(const std::function<float(float)>& fn) const;
+
+    DynamicMatrix Transpose() const;
+    DynamicMatrix HadamardProduct(const DynamicMatrix& other) const;
+    DynamicMatrix operator-(const DynamicMatrix& other) const;
 };
 
 #endif //NEURAL_NETWORK_CIRCUIT_VISUALIZATION_DYNAMICMATRIX_H

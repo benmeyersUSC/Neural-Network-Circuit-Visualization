@@ -11,14 +11,19 @@
 class DrawComponent;
 
 class NeuralNetworkActor : public Actor {
+    static constexpr float ANIMATION_DURATION = 1.0f;
 public:
     NeuralNetworkActor();
     NeuralNetwork& GetNN() {return mNN;}
     void SetWidth(float w){mWidth = w;}
     void SetHeight(float h){mHeight = h;}
+    void StartGraphicForward();
+    void StartGraphicTrain();
 
 protected:
     void HandleRender() override;
+    void HandleUpdate(float deltaTime) override;
+    void HandleInput(const bool keys[], SDL_MouseButtonFlags mouseButtons, const Vector2 &posMouse) override;
 
 private:
     NeuralNetwork  mNN;
@@ -26,18 +31,34 @@ private:
     float          mHeight;
     DrawComponent* mDraw = nullptr;
 
-    // screenspace center of the neuronIdx-th neuron in column col
+    float mForwardTimer  = 0.0f;
+    float mBackwardTimer = 0.0f;
+    bool  mIsTraining    = false;
+
+    std::vector<DynamicMatrix> mLastActivation;  // a at each column, size = totalCols
+    std::vector<DynamicMatrix> mLastDeltas;       // δ at each layer, size = L (col 1..L)
+    std::vector<DynamicMatrix> mLastWeightGrads;  // dW per layer, size = L
+
+    bool mLastR = false;
+    std::function<void()> mRFunc = [this] { StartGraphicForward(); };
+    bool mLastT = false;
+    std::function<void()> mTFunc = [this] {
+        mIsTraining = !mIsTraining;
+        if (mIsTraining) StartGraphicTrain();
+    };
+
     [[nodiscard]] Vector2 NeuronPos(int col, int neuronIdx, int neuronCount,
                       float colStep, float originX, float originY) const;
-
-    // Radius that keeps circles from overlapping regardless of network size.
-    static float NeuronRadius(float colStep, float minRowStep) ;
-
+    static float NeuronRadius(float colStep, float minRowStep);
     void SetNN(NeuralNetwork nn);
 
-    void DrawWeights(size_t totalCols, const std::vector<Layer>& layers, float colStep, float ox, float oy);
-    void DrawNeurons(size_t totalCols, const std::vector<Layer>& layers, const std::vector<int>& neuronCounts,
-                     const std::vector<DynamicMatrix>& activations, float colStep, float ox, float oy, float radius);
+    // forward pass draws (left → right, uses mForwardTimer)
+    void DrawWeights(size_t totalCols, const std::vector<Layer>& layers, float colStep, float ox, float oy) const;
+    void DrawNeurons(size_t totalCols, const std::vector<Layer>& layers, const std::vector<int>& neuronCounts, float colStep, float ox, float oy, float radius);
+
+    // backward pass draws (right → left, uses mBackwardTimer)
+    void DrawBackwardWeights(size_t totalCols, float colStep, float ox, float oy) const;
+    void DrawBackwardNeurons(size_t totalCols, const std::vector<int>& neuronCounts, float colStep, float ox, float oy, float radius) const;
 };
 
 #endif // NEURAL_NETWORK_ACTOR_H

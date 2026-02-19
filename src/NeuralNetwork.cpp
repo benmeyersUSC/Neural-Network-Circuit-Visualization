@@ -148,7 +148,95 @@ DynamicMatrix NeuralNetwork::forward(const DynamicMatrix& input) const {
     return current;
 }
 
-void NeuralNetwork::operator<<(std::ostream &os) {
+// ---- activation derivatives ----
+// sigmoid'(a) = a*(1-a)  — takes post-activation value
+static float sigmoidPrime(float a) { return a * (1.0f - a); }
+// relu'(z) = z > 0 ? 1 : 0  — takes pre-activation value
+static float reluPrime(float z)    { return z > 0.0f ? 1.0f : 0.0f; }
+// softmax jacobian applied to error vector: a ⊙ (e - <a,e>)
+static DynamicMatrix softmaxDelta(const DynamicMatrix& a, const DynamicMatrix& e) {
+    float dot = 0.0f;
+    for (size_t i = 0; i < a.Rows(); i++) dot += a.at(i, 0) * e.at(i, 0);
+    DynamicMatrix d(a.Rows(), 1);
+    for (size_t i = 0; i < a.Rows(); i++) d.at(i, 0) = a.at(i, 0) * (e.at(i, 0) - dot);
+    return d;
+}
+
+TrainSnapshot NeuralNetwork::TrainStep(const DynamicMatrix& input,
+                                       const DynamicMatrix& target,
+                                       float lr, float l1)
+{
+    const size_t L = mLayers.size();
+
+    // === FORWARD — capture z (pre-activation) and a (post-activation) at every layer ===
+    std::vector<DynamicMatrix> Z;  Z.reserve(L);
+    std::vector<DynamicMatrix> A;  A.reserve(L + 1);
+    A.push_back(input);
+    for (const auto& layer : mLayers) {
+        DynamicMatrix z = layer.weights * A.back() + layer.biases;
+        Z.push_back(z);
+        if (layer.activation == Activation::Softmax)
+            A.push_back(softmax(z));
+        else
+            A.push_back(z.Apply(layer.activation == Activation::Sigmoid ? sigmoid : relu));
+    }
+
+    // === LOSS (cross-entropy: -sum(y * log(a))) ===
+    float loss = 0.0f;
+    for (size_t i = 0; i < A.back().Rows(); i++) {
+        float a = std::max(A.back().at(i, 0), 1e-7f);  // clamp for log stability
+        loss -= target.at(i, 0) * std::log(a);
+    }
+
+    // === BACKWARD ===
+    std::vector deltas(L, DynamicMatrix(1, 1));
+    std::vector dW(L,     DynamicMatrix(1, 1));
+    std::vector dB(L,     DynamicMatrix(1, 1));
+
+    // output layer: cross-entropy gradient w.r.t. softmax/sigmoid pre-activation = a - y
+    // (softmax+CE and sigmoid+CE both simplify to this — the activation derivative cancels)
+    deltas[L-1] = A[L] - target;
+    dW[L-1] = deltas[L-1] * A[L-1].Transpose();
+    dB[L-1] = deltas[L-1];
+
+    // hidden layers — walk backward, apply activation derivative here
+    for (int l = static_cast<int>(L) - 2; l >= 0; --l) {
+        DynamicMatrix err = mLayers[l+1].weights.Transpose() * deltas[l+1];
+        switch (mLayers[l].activation) {
+            case Activation::Sigmoid:
+                deltas[l] = err.HadamardProduct(A[l+1].Apply(sigmoidPrime)); break;
+            case Activation::ReLU:
+                deltas[l] = err.HadamardProduct(Z[l].Apply(reluPrime));      break;
+            case Activation::Softmax:
+                deltas[l] = softmaxDelta(A[l+1], err);                       break;
+        }
+        dW[l] = deltas[l] * A[l].Transpose();
+        dB[l] = deltas[l];
+    }
+
+    // === L1 SPARSITY: add lambda*|W| to loss, lambda*sign(W) to gradients ===
+    if (l1 > 0.0f) {
+        for (size_t l = 0; l < L; l++) {
+            for (size_t r = 0; r < dW[l].Rows(); r++) {
+                for (size_t c = 0; c < dW[l].Cols(); c++) {
+                    float w = mLayers[l].weights.at(r, c);
+                    loss += l1 * std::fabs(w);
+                    dW[l].at(r, c) += l1 * (w > 0.0f ? 1.0f : (w < 0.0f ? -1.0f : 0.0f));
+                }
+            }
+        }
+    }
+
+    // === UPDATE WEIGHTS ===
+    for (size_t l = 0; l < L; l++) {
+        mLayers[l].weights = mLayers[l].weights + dW[l] * (-lr);
+        mLayers[l].biases  = mLayers[l].biases  + dB[l] * (-lr);
+    }
+
+    return { A, deltas, dW, loss };
+}
+
+void NeuralNetwork::operator<<(std::ostream &os) const {
     for (const auto& l : mLayers) {
         os << l.weights.Rows() << "x" << l.weights.Cols() << "(" << ActivationName(l.activation) << ")\n";
     }

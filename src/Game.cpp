@@ -116,6 +116,13 @@ void Game::RemoveRenderable(Component* comp) {
 	std::erase(mRenderables, comp);
 }
 
+void Game::LeadingEdge(bool keyBool, bool &lastBool, const std::function<void()> &fn, bool condition) {
+	if (!lastBool && keyBool && condition) {
+		fn();
+	}
+	lastBool = keyBool;
+}
+
 void Game::AddPendingDestroy(class Actor *actor) {
 	if (std::ranges::find(mPendingDestroy, actor) == mPendingDestroy.end())
 	{
@@ -178,6 +185,7 @@ void Game::LoadData()
 	mNN->SetWidth(927.0f);
 	mNN->SetHeight(549.0f);
 	mNN->GetTransform().SetPosition({HALF_WIDTH, HALF_HEIGHT});
+	mNN->StartGraphicForward();
 }
 
 void Game::UnloadData()

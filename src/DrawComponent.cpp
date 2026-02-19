@@ -109,10 +109,6 @@ void DrawComponent::OutlineRect::Draw(SDL_Renderer* renderer) {
     SDL_RenderRect(renderer, &rct);
 }
 
-// void DrawComponent::LineSegment::Draw(SDL_Renderer* renderer) {
-//     SDL_SetRenderDrawColor(renderer, _r, _g, _b, _a);
-//     SDL_RenderLine(renderer, _x, _y, _x2, _y2);
-// }
 
 void DrawComponent::LineSegment::Draw(SDL_Renderer* renderer) {
     // ditch empty lines

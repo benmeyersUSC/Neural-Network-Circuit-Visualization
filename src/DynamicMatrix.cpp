@@ -63,6 +63,35 @@ DynamicMatrix DynamicMatrix::operator*(float scalar) const {
     return result;
 }
 
+DynamicMatrix DynamicMatrix::Transpose() const {
+    DynamicMatrix result(mCols, mRows);
+    for (size_t r = 0; r < mRows; r++)
+        for (size_t c = 0; c < mCols; c++)
+            result.at(c, r) = at(r, c);
+    return result;
+}
+
+// element-wise multiply
+DynamicMatrix DynamicMatrix::HadamardProduct(const DynamicMatrix& other) const {
+    if (mRows != other.mRows || mCols != other.mCols)
+        throw std::runtime_error("HadamardProduct: incompatible shapes");
+    DynamicMatrix result(mRows, mCols);
+    for (size_t i = 0; i < mRows; i++)
+        for (size_t j = 0; j < mCols; j++)
+            result.at(i, j) = at(i, j) * other.at(i, j);
+    return result;
+}
+
+DynamicMatrix DynamicMatrix::operator-(const DynamicMatrix& other) const {
+    if (mRows != other.mRows || mCols != other.mCols)
+        throw std::runtime_error("Matrix subtract: incompatible shapes");
+    DynamicMatrix result(mRows, mCols);
+    for (size_t i = 0; i < mRows; i++)
+        for (size_t j = 0; j < mCols; j++)
+            result.at(i, j) = at(i, j) - other.at(i, j);
+    return result;
+}
+
 // apply a function to each value
 DynamicMatrix DynamicMatrix::Apply(const std::function<float(float)>& fn) const {
     DynamicMatrix result(mRows, mCols);
