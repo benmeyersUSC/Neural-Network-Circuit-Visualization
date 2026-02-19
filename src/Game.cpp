@@ -1,11 +1,14 @@
 #include "Game.h"
 
+#include <iostream>
+
 #include "Actor.h"
 #include "Component.h"
 #include "DrawComponent.h"
 #include "Line.h"
+#include "NeuralNetworkActor.h"
 Game gGame;
-
+#include "NeuralNetwork.h"
 Game::Game()
 {
 	// comments in class declaration explain these members
@@ -170,6 +173,11 @@ void Game::GenerateOutput()
 
 void Game::LoadData()
 {
+	mNN = CreateActor<NeuralNetworkActor>();
+	mNN->GetNN().FromConfig("../src/nn.cfg");
+	mNN->SetWidth(927.0f);
+	mNN->SetHeight(549.0f);
+	mNN->GetTransform().SetPosition({HALF_WIDTH, HALF_HEIGHT});
 }
 
 void Game::UnloadData()

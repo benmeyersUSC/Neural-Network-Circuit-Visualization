@@ -16,6 +16,7 @@
 class Component;
 class DrawComponent;
 using Math::Vector2;
+class NeuralNetworkActor;
 
 class Game
 {
@@ -96,6 +97,7 @@ private:
 	std::vector<Actor*> mPendingCreate;
 	std::vector<Actor*> mPendingDestroy;
 	std::vector<Component*> mRenderables;
+	NeuralNetworkActor* mNN = nullptr;
 
 	void DestroyActor(Actor* actor);
 

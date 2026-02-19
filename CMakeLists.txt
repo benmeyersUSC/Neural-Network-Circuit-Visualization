@@ -33,6 +33,14 @@ add_executable(Neural-Network-Circuit-Visualization src/main.cpp
         src/DrawComponent.h
         src/Line.cpp
         src/Line.h
+        src/NeuralNetwork.cpp
+        src/NeuralNetwork.h
+        src/Matrix.cpp
+        src/Matrix.h
+        src/DynamicMatrix.cpp
+        src/DynamicMatrix.h
+        src/NeuralNetworkActor.cpp
+        src/NeuralNetworkActor.h
 )
 
 target_link_libraries(Neural-Network-Circuit-Visualization PRIVATE SDL3::SDL3)
