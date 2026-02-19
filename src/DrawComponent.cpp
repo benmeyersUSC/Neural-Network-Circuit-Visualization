@@ -37,8 +37,8 @@ void DrawComponent::AddFilledCircle(float cx, float cy, float radius, Uint8 r, U
     mShapes.push_back(std::make_unique<Circle>(cx, cy, radius, r, g, b, a));
 }
 
-void DrawComponent::AddLine(float x1, float y1, float x2, float y2, Uint8 r, Uint8 g,Uint8 b,Uint8 a) {
-    mShapes.push_back(std::make_unique<LineSegment>(x1, y1, x2, y2, r, g, b, a));
+void DrawComponent::AddLine(float x1, float y1, float x2, float y2, Uint8 r, Uint8 g,Uint8 b,Uint8 a, int thickness) {
+    mShapes.push_back(std::make_unique<LineSegment>(x1, y1, x2, y2, r, g, b, a, thickness));
 }
 
 void DrawComponent::AddRect(float x, float y, float w, float h, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
@@ -109,10 +109,41 @@ void DrawComponent::OutlineRect::Draw(SDL_Renderer* renderer) {
     SDL_RenderRect(renderer, &rct);
 }
 
+// void DrawComponent::LineSegment::Draw(SDL_Renderer* renderer) {
+//     SDL_SetRenderDrawColor(renderer, _r, _g, _b, _a);
+//     SDL_RenderLine(renderer, _x, _y, _x2, _y2);
+// }
+
 void DrawComponent::LineSegment::Draw(SDL_Renderer* renderer) {
+    // ditch empty lines
+    float dx = _x2 - _x;
+    float dy = _y2 - _y;
+    float len = std::sqrt(dx*dx + dy*dy);
+    if (len < 1.0f) return;
+
     SDL_SetRenderDrawColor(renderer, _r, _g, _b, _a);
-    SDL_RenderLine(renderer, _x, _y, _x2, _y2);
+    if (_thickness <= 1) { 
+        SDL_RenderLine(renderer, _x, _y, _x2, _y2); 
+        return; 
+    }
+    
+    // if the line's direction vector is [dx, dy], then the perpendicular is [-dy, dx]
+    // then divide by len to normalize (number of pixels to shift)
+    float px = -dy / len;
+    float py = dx / len;   
+
+    // if thickness is two, we want each line shifted a half a pixel
+    // half = (2 - 1) * 0.5f
+    // if thickness was 4, we'd have (4-1) * 0.5f = 1.5f
+    //....this would have us looping from offsets of -1.5 to 1.5, exactly what we want
+    float half = (_thickness - 1) * 0.5f;
+    for (int i = 0; i < _thickness; ++i) {
+        float offset = i - half;
+        SDL_RenderLine(renderer, _x + px * offset, _y + py * offset, _x2 + px * offset, _y2 + py * offset);
+    }
 }
+
+
 
 void DrawComponent::Circle::Draw(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, _r, _g, _b, _a);

@@ -7,7 +7,7 @@
 #include "Math.h"
 #include <algorithm>
 #include <cmath>
-
+#include "Game.h"
 
 NeuralNetworkActor::NeuralNetworkActor():mWidth(0.0f), mHeight(0.0f) {
     mDraw = CreateComponent<DrawComponent>();
@@ -43,14 +43,18 @@ void NeuralNetworkActor::DrawWeights(size_t totalCols, const std::vector<Layer>&
     {
         // get the weight matrix that transforms to next column
         const DynamicMatrix& W = layers[c].weights;
-        int inCount  = static_cast<int>(W.Cols());  // W is [out x in], so Cols = input neuron count
-        int outCount = static_cast<int>(W.Rows());  // Rows = output neuron count
+        // weight columns is num input rows
+        int inCount  = static_cast<int>(W.Cols());
+        // weight rows is num output rows
+        int outCount = static_cast<int>(W.Rows());
 
         // find the largest absolute weight in this layer so we can normalize against it
         float maxMag = 0.0f;
-        for (int i = 0; i < inCount; ++i)
-            for (int j = 0; j < outCount; ++j)
+        for (int i = 0; i < inCount; ++i) {
+            for (int j = 0; j < outCount; ++j) {
                 maxMag = std::max(maxMag, std::fabs(W.at(static_cast<size_t>(j), static_cast<size_t>(i))));
+            }
+        }
 
         // for each FROM
         for (int i = 0; i < inCount; ++i)
@@ -65,29 +69,34 @@ void NeuralNetworkActor::DrawWeights(size_t totalCols, const std::vector<Layer>&
 
                 float w = W.at(static_cast<size_t>(j), static_cast<size_t>(i));
                 // normalize so the strongest weight in this layer maps to alpha 255
-                float normalized = (maxMag > 0.0f) ? std::fabs(w) / maxMag : 0.0f;
-                auto alpha = static_cast<Uint8>(Math::Clamp(normalized * 255.0f, 30.0f, 255.0f));
+                float normalized = std::fabs(w) / maxMag;
+                auto grayscale = static_cast<Uint8>(Math::Clamp(normalized * 255.0f, 30.0f, 255.0f));
 
-                mDraw->AddLine(src.x, src.y, dst.x, dst.y, 255, 0, 0, alpha);
+                mDraw->AddLine(src.x, src.y, dst.x, dst.y, grayscale, grayscale, grayscale, 255, 3);
             }
         }
     }
 }
 
-void NeuralNetworkActor::DrawNeurons(size_t totalCols, const std::vector<Layer>& layers, const std::vector<int>& neuronCounts, float colStep, float ox, float oy, float radius) {
+void NeuralNetworkActor::DrawNeurons(size_t totalCols, const std::vector<Layer>& layers, const std::vector<int>& neuronCounts,
+                                      const std::vector<DynamicMatrix>& activations, float colStep, float ox, float oy, float radius) {
+    // for each column
     for (int c = 0; c < totalCols; ++c)
     {
+        // how many neurons
         int nCount = neuronCounts[c];
 
-        // Activation info for this column
-        // col 0 is the input layer — no activation
-        bool isInput = (c == 0);
+        // activation func
+        bool isInput = c == 0;
         Activation act{};
-        if (!isInput)
+        if (!isInput) {
+            // -1 because the layer is the weight-bias-activation that comes to this (the i-th) column
             act = layers[c - 1].activation;
+        }
 
-        // Circle color by activation
-        Uint8 cr, cg, cb;
+        // color each neuron by activation type
+        // let's alpha scale them by their value in a forward()....
+        Uint8 cr = 0, cg = 0, cb = 0;
         if (isInput) {
             cr = 200; cg = 200; cb = 200;   // white-gray
         } else {
@@ -102,29 +111,37 @@ void NeuralNetworkActor::DrawNeurons(size_t totalCols, const std::vector<Layer>&
         }
 
         // Label character
-        const char* label = nullptr;
+        std::string label;
         if (!isInput) {
             switch (act) {
-                case Activation::Sigmoid: label = "s"; break;
-                case Activation::ReLU:    label = "R"; break;
-                case Activation::Softmax: label = "S"; break;
+                case Activation::Sigmoid: label += "sig"; break;
+                case Activation::ReLU:    label += "ReLU"; break;
+                case Activation::Softmax: label += "SM"; break;
             }
         }
+        // relu is unbounded so normalize by the layer's max activation;
+        // sigmoid/softmax are already in [0,1] so scale = 1.0
+        float alphaScale = 1.0f;
+        if (isInput || act == Activation::ReLU) {
+            float maxAct = 0.0f;
+            for (int k = 0; k < nCount; ++k)
+                maxAct = std::max(maxAct, std::fabs(activations[c].at(static_cast<size_t>(k), 0)));
+            alphaScale = (maxAct > 0.0f) ? 1.0f / maxAct : 0.0f;
+        }
 
+        // do this here because all activations are same in a layer
+        const auto len = static_cast<float>(label.size());
+        float textScale = radius * 2.0f / (len * Game::CHAR_PIXELS);
+        float halfChar  = Game::HALF_CHAR_PIXELS * textScale;
         for (int n = 0; n < nCount; ++n)
         {
             Vector2 pos = NeuronPos(c, n, nCount, colStep, ox, oy);
 
-            mDraw->AddFilledCircle(pos.x, pos.y, radius, cr, cg, cb, 255);
+            float val  = std::fabs(activations[c].at(static_cast<size_t>(n), 0));
+            auto  alpha = static_cast<Uint8>(Math::Clamp(val * alphaScale * 255.0f, 0.0f, 255.0f));
 
-            if (label)
-            {
-                // Scale text to fit inside circle; SDL debug chars are 8px wide/tall
-                float textScale = Math::Max(1.0f, radius / 8.0f);
-                float halfChar  = 4.0f * textScale;
-                mDraw->AddText(pos.x - halfChar, pos.y - halfChar,
-                               label, textScale);
-            }
+            mDraw->AddFilledCircle(pos.x, pos.y, radius, cr, cg, cb, alpha);
+            mDraw->AddText(pos.x - halfChar * len, pos.y - halfChar, label, textScale);
         }
     }
 }
@@ -156,6 +173,17 @@ void NeuralNetworkActor::HandleRender()
     float minRowStep = mHeight / static_cast<float>(maxNeurons + 1);
     float radius = NeuronRadius(colStep, minRowStep);
 
+    // if no input has been set, default to a ones vector so the network is visible
+    auto inp = DynamicMatrix(static_cast<size_t>(neuronCounts[0]), 1);
+    float x = 1.0f;
+    auto bsfn = [&x](float f){
+        x += 1.2f;
+        return x;
+    };
+    inp = inp.Apply(bsfn);
+
+    auto activations = mNN.ForwardAll(inp);
+
     DrawWeights(totalCols, layers, colStep, ox, oy);
-    DrawNeurons(totalCols, layers, neuronCounts, colStep, ox, oy, radius);
+    DrawNeurons(totalCols, layers, neuronCounts, activations, colStep, ox, oy, radius);
 }

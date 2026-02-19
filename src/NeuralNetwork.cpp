@@ -128,6 +128,15 @@ void NeuralNetwork::FromConfig(const std::string& path) {
     }
 }
 
+// run a forward pass and return a vector of all activations!
+std::vector<DynamicMatrix> NeuralNetwork::ForwardAll(const DynamicMatrix& input) const {
+    std::vector<DynamicMatrix> acts;
+    acts.reserve(mLayers.size() + 1);
+    acts.push_back(input);
+    for (const auto& layer : mLayers)
+        acts.push_back(layer.forward(acts.back()));
+    return acts;
+}
 
 DynamicMatrix NeuralNetwork::forward(const DynamicMatrix& input) const {
     if (mLayers.empty())

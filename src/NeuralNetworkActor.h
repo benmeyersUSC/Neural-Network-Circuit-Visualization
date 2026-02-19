@@ -36,7 +36,8 @@ private:
     void SetNN(NeuralNetwork nn);
 
     void DrawWeights(size_t totalCols, const std::vector<Layer>& layers, float colStep, float ox, float oy);
-    void DrawNeurons(size_t totalCols, const std::vector<Layer>& layers, const std::vector<int>& neuronCounts, float colStep, float ox, float oy, float radius);
+    void DrawNeurons(size_t totalCols, const std::vector<Layer>& layers, const std::vector<int>& neuronCounts,
+                     const std::vector<DynamicMatrix>& activations, float colStep, float ox, float oy, float radius);
 };
 
 #endif // NEURAL_NETWORK_ACTOR_H

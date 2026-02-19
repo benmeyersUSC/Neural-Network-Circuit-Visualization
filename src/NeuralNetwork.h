@@ -39,6 +39,10 @@ public:
     // Run a forward pass. Input must be a column vector [input_size x 1].
     [[nodiscard]] DynamicMatrix forward(const DynamicMatrix& input) const;
 
+    // Like forward(), but returns activations at every column including input.
+    // Result[0] = input, Result[i] = output of layer[i-1]. Size = layers + 1.
+    [[nodiscard]] std::vector<DynamicMatrix> ForwardAll(const DynamicMatrix& input) const;
+
     [[nodiscard]] const std::vector<Layer>& Layers() const { return mLayers; }
 
      void operator<<(std::ostream& os);

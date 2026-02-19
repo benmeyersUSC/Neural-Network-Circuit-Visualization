@@ -25,7 +25,7 @@ public:
     static std::string FormatString(const char* fmt, T val);
     void AddText(float x, float y, std::string_view txt, float scale = 1.0f);
     void AddFilledCircle(float cx, float cy, float radius, Uint8 r, Uint8 g,Uint8 b,Uint8 a);
-    void AddLine(float x1, float y1, float x2, float y2, Uint8 r, Uint8 g,Uint8 b,Uint8 a);
+    void AddLine(float x1, float y1, float x2, float y2, Uint8 r, Uint8 g,Uint8 b,Uint8 a, int thickness = 1);
     void AddRect(float x, float y, float w, float h, Uint8 r, Uint8 g,Uint8 b,Uint8 a);
     void AddOutlineRect(float x, float y, float w, float h, Uint8 r, Uint8 g,Uint8 b,Uint8 a);
     void AddScaledWidthRect(float x, float y, float maxW, float h, float pct, Uint8 r, Uint8 g,Uint8 b,Uint8 a, std::string_view endMarker = "", float pad = 0.0f, float textScale = 1.0f, bool reversed = false);
@@ -66,8 +66,9 @@ public:
     };
     struct LineSegment : Shape {
         float _x2, _y2;
-        LineSegment(float x1, float y1, float x2, float y2, Uint8 r, Uint8 g, Uint8 b, Uint8 a):
-        Shape(x1, y1, r, g, b, a), _x2(x2), _y2(y2)
+        int _thickness;
+        LineSegment(float x1, float y1, float x2, float y2, Uint8 r, Uint8 g, Uint8 b, Uint8 a, int thickness = 1):
+        Shape(x1, y1, r, g, b, a), _x2(x2), _y2(y2), _thickness(thickness)
         {}
         void Draw(SDL_Renderer* renderer) override;
     };
